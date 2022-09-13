@@ -1,0 +1,55 @@
+{{- /*
+*------------------------------------------------------*
+*													   *
+*	   	 ROBERT'S RULES OF ORDER for YAGP.DB V1.01	   *
+*	   		  written by Vayne, for use with		   *
+*	   				 YAGP.DB TL v1.12				   *
+*													   *
+*	PROVIDED AS IS. Should you require support, feel   *
+*	free to contact me at vaynealtapascine@proton.me   *
+*													   *
+*--- MOTION -------------------------------------------*
+*	  Trigger:	RegEx								   *
+*	  Pattern:	^[\!\-\.\/\+]+[Mm]otion[:]*\b		   *
+*	  Colour:	14238262							   *
+*------------------------------------------------------*
+*/ -}}
+
+{{/* VARIABLES */}}
+{{ $motionArg := (str .StrippedMsg) }}
+{{ $invoker := index (split .Member.Nick " ") 0 }}
+{{ $finalColour := 14238262 }}
+{{ $avatar := (joinStr "" "https://cdn.discordapp.com/avatars/" (toString .User.ID) "/" .User.Avatar ".png") }}
+{{ $description := "" }}
+{{ $title := "" }}
+
+{{/* INGEST */}}
+{{ $motionArg = reReplace `[\s]*\+` $motionArg "" }}
+{{ $description = reFind `\+[\S\s]*` $motionArg }}
+{{ $description = reReplace `\+[\s]*` $description "" }}
+{{ $motionArg = reReplace `[\.\!]$` $motionArg "" }}
+{{ $motionArg = trimSpace $motionArg }}
+{{ if ne "" (reFind `[\S\s]+` $motionArg) }} {{$motionArg = joinStr "" " " $motionArg }} {{ else }} {{ end }}
+
+{{/* FORMATTING */}}
+{{ if ( eq "" $motionArg ) }}
+	{{ $title = (joinStr "" $invoker " has a motion.") }}
+{{else if gt (len $motionArg) 200 }}
+	{{ $title = (joinStr "" $invoker " has a motion.") }}
+	{{ $description = $motionArg }}
+{{else}} {{ $title = (joinStr "" $invoker " moves" $motionArg ".") }} {{end}}
+
+{{ if (ne "" $description) }} {{ $description = (joinStr "" "That is, " $description ) }} {{else}} {{end}}
+
+{{/* EMBED */}}
+{{ $x := sendMessageRetID nil (cembed
+	"title" (joinStr "" $title "") 
+	"description" (joinStr "" $description "") 
+	"color" (toInt $finalColour) 
+	"thumbnail" (sdict "url" $avatar) 
+	"timestamp" .Message.Timestamp 
+) }}
+
+{{/* REACTIONS & RELEASE */}}
+{{ addMessageReactions nil $x "👍" "👎" "☑" }}
+{{ deleteTrigger 3 }}
