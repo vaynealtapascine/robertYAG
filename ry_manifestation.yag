@@ -8,38 +8,35 @@
 *	PROVIDED AS IS. Should you require support, feel   *
 *	free to contact me at vaynealtapascine@proton.me   *
 *													   *
-*--- MOTION -------------------------------------------*
+*--- BAGSAKAN -----------------------------------------*
 *	  Trigger:	RegEx
-*	  Pattern:	^[\!\-\.\/\+]+[Mm]otion[:]*\b
-*	  Colour:	14238262
+*	  Pattern:	^[\!\-\.\/\+]+manifest[:]*\b|^[\!\-\.\/\+]+manif[:]*\b|^[\!\-\.\/\+]+mnf[:]*\b
+*	  Colour:	4695111
 *------------------------------------------------------*
 */ -}}
 
 {{/* VARIABLES */}}
 {{ $motionArg := (str .StrippedMsg) }}
-{{ $invoker := index (split .Member.Nick " ") 0 }}
-{{ $finalColour := 14238262 }}
-{{ $avatar := (joinStr "" "https://cdn.discordapp.com/avatars/" (toString .User.ID) "/" .User.Avatar ".png") }}
 {{ $description := "" }}
 {{ $title := "" }}
+{{ $invoker := index (split .Member.Nick " ") 0 }}
+{{ $finalColour := 4695111 }}
+{{ $avatar := (joinStr "" "https://cdn.discordapp.com/avatars/" (toString .User.ID) "/" .User.Avatar ".png") }}
 
 {{/* INGEST */}}
 {{ $motionArg = reReplace `[\s]*\+` $motionArg "" }}
 {{ $description = reFind `\+[\S\s]*` $motionArg }}
 {{ $description = reReplace `\+[\s]*` $description "" }}
-{{ $motionArg = reReplace `[\.\!]$` $motionArg "" }}
 {{ $motionArg = trimSpace $motionArg }}
 {{ if ne "" (reFind `[\S\s]+` $motionArg) }} {{$motionArg = joinStr "" " " $motionArg }} {{ else }} {{ end }}
 
 {{/* FORMATTING */}}
 {{ if ( eq "" $motionArg ) }}
-	{{ $title = (joinStr "" $invoker " has a motion.") }}
+	{{ $title = (joinStr "" $invoker " has a manifestation.") }}
 {{else if gt (len $motionArg) 200 }}
-	{{ $title = (joinStr "" $invoker " has a motion.") }}
+	{{ $title = (joinStr "" $invoker " has a manifestation.") }}
 	{{ $description = $motionArg }}
-{{else}} {{ $title = (joinStr "" $invoker " moves" $motionArg ".") }} {{end}}
-
-{{ if (ne "" $description) }} {{ $description = (joinStr "" "That is, " $description ) }} {{else}} {{end}}
+{{else}} {{ $title = (joinStr "" $invoker " has a manifestation:" $motionArg) }} {{end}}
 
 {{/* EMBED */}}
 {{ $x := sendMessageRetID nil (cembed

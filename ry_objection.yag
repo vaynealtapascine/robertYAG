@@ -1,0 +1,36 @@
+{{- /*
+*------------------------------------------------------*
+*													   *
+*	   	 ROBERT'S RULES OF ORDER for YAGP.DB V1.01	   *
+*	   		  written by Vayne, for use with		   *
+*	   				 YAGP.DB TL v1.12				   *
+*													   *
+*	PROVIDED AS IS. Should you require support, feel   *
+*	free to contact me at vaynealtapascine@proton.me   *
+*													   *
+*--- OBJECTION ----------------------------------------*
+*	  Trigger:	RegEx
+*	  Pattern:	^[\!\-\.\/\+]+object[:]*\b|^[\!\-\.\/\+]+objection[:]*\b
+*	  Colour:	15709203
+*------------------------------------------------------*
+*/ -}}
+
+{{/* VARIABLES */}}
+{{ $invoker := index (split .Member.Nick " ") 0 }}
+{{ $finalColour := 15709203 }}
+{{ $avatar := (joinStr "" "https://cdn.discordapp.com/avatars/" (toString .User.ID) "/" .User.Avatar ".png") }}
+
+{{/* FORMATTING */}}
+{{ $title := (joinStr "" $invoker " objects.") }}
+
+{{/* EMBED */}}
+{{ $x := sendMessageRetID nil (cembed
+	"title" (joinStr "" $title "") 
+	"color" (toInt $finalColour) 
+	"thumbnail" (sdict "url" $avatar) 
+	"timestamp" .Message.Timestamp 
+) }}
+
+{{/* REACTIONS & RELEASE */}}
+{{ addMessageReactions nil $x "☑️" }}
+{{ deleteTrigger 3 }}

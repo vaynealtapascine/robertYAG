@@ -8,48 +8,37 @@
 *	PROVIDED AS IS. Should you require support, feel   *
 *	free to contact me at vaynealtapascine@proton.me   *
 *													   *
-*--- MOTION -------------------------------------------*
+*--- BAGSAKAN -----------------------------------------*
 *	  Trigger:	RegEx
-*	  Pattern:	^[\!\-\.\/\+]+[Mm]otion[:]*\b
-*	  Colour:	14238262
+*	  Pattern:	^[\!\-\.\/\+]+bagsakan[:]*\b
+*	  Colour:	16762941
 *------------------------------------------------------*
 */ -}}
 
 {{/* VARIABLES */}}
 {{ $motionArg := (str .StrippedMsg) }}
 {{ $invoker := index (split .Member.Nick " ") 0 }}
-{{ $finalColour := 14238262 }}
+{{ $finalColour := 16762941 }}
 {{ $avatar := (joinStr "" "https://cdn.discordapp.com/avatars/" (toString .User.ID) "/" .User.Avatar ".png") }}
-{{ $description := "" }}
-{{ $title := "" }}
 
 {{/* INGEST */}}
-{{ $motionArg = reReplace `[\s]*\+` $motionArg "" }}
-{{ $description = reFind `\+[\S\s]*` $motionArg }}
-{{ $description = reReplace `\+[\s]*` $description "" }}
 {{ $motionArg = reReplace `[\.\!]$` $motionArg "" }}
 {{ $motionArg = trimSpace $motionArg }}
-{{ if ne "" (reFind `[\S\s]+` $motionArg) }} {{$motionArg = joinStr "" " " $motionArg }} {{ else }} {{ end }}
+{{ if ne "" (reFind `[\S\s]+` $motionArg) }}
+	{{$motionArg = joinStr "" " " $motionArg }}
+{{ else }} {{ end }}
 
 {{/* FORMATTING */}}
-{{ if ( eq "" $motionArg ) }}
-	{{ $title = (joinStr "" $invoker " has a motion.") }}
-{{else if gt (len $motionArg) 200 }}
-	{{ $title = (joinStr "" $invoker " has a motion.") }}
-	{{ $description = $motionArg }}
-{{else}} {{ $title = (joinStr "" $invoker " moves" $motionArg ".") }} {{end}}
-
-{{ if (ne "" $description) }} {{ $description = (joinStr "" "That is, " $description ) }} {{else}} {{end}}
+{{ $title := (joinStr "" "Ayon kay " $invoker ", bagsakan" $motionArg ".") }}
 
 {{/* EMBED */}}
 {{ $x := sendMessageRetID nil (cembed
-	"title" (joinStr "" $title "") 
-	"description" (joinStr "" $description "") 
+	"title" (joinStr "" $title "")
 	"color" (toInt $finalColour) 
 	"thumbnail" (sdict "url" $avatar) 
 	"timestamp" .Message.Timestamp 
 ) }}
 
 {{/* REACTIONS & RELEASE */}}
-{{ addMessageReactions nil $x "👍" "👎" "☑" }}
+{{ addMessageReactions nil $x "👏" }}
 {{ deleteTrigger 3 }}
