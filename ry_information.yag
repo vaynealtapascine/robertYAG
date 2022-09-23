@@ -8,10 +8,10 @@
 *	PROVIDED AS IS. Should you require support, feel   *
 *	free to contact me at vaynealtapascine@proton.me   *
 *													   *
-*--- BAGSAKAN -----------------------------------------*
+*--- POINT OF INFORMATION -----------------------------*
 *	  Trigger:	RegEx
 *	  Pattern:	^[\!\-\.\/\+]+inf[:]*\b|^[\!\-\.\/\+]+poi[:]*\b
-*	  Colour:	16753476
+*	  Colour:	8482520
 *------------------------------------------------------*
 */ -}}
 
