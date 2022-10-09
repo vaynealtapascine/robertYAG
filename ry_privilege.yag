@@ -15,28 +15,199 @@
 *------------------------------------------------------*
 */ -}}
 
-{{/* VARIABLES */}}
-{{ $motionArg := (str .StrippedMsg) }}
-{{ $description := "" }}
-{{ $title := "" }}
-{{ $invoker := index (split .Member.Nick " ") 0 }}
-{{ $finalColour := 10120663 }}
-{{ $avatar := (joinStr "" "https://cdn.discordapp.com/avatars/" (toString .User.ID) "/" .User.Avatar ".png") }}
+{{/* EDITABLES */}}
+	{{ $finalColour := 10120663 }}
+{{/* CLOSE EDITABLES */}}
+
+{{/* INVOKE VARIABLES */}}
+	{{ $dbEntryID := 3 }}
+	{{ $dbEntryName := "PRIV" }}
+	{{ $dbWriteMotion := true }}
+	{{ $dbLoading := false }}
+{{/* CLOSE INVOKES */}}
+
+{{/* FUNCTIONAL VARIABLES */}}
+	{{- $userInvokee := .User.ID }}
+	{{- $userInvoker := .User.ID }}
+	{{- $motionArg := (str .StrippedMsg) -}}
+	{{- $description := "" -}}
+	{{- $title := "" -}}
+	{{- $standing := "" -}}
+	{{- $invokee := "" -}}
+	{{- $avatar := "" -}}
+	{{- $parseMode := "" -}}
+	{{- $footer := "" -}}
+	{{- $incLen := false }}
+	{{- $y := ( cembed "description" "" ) }}
+{{/* CLOSE FUNCTIONALS */}}
+
+{{define "parseFlags"}}
+	{{.Set "Out" (sdict
+		"Positional" (cslice)
+		"Flags" (dict)
+		"Switches" (dict)
+	)}}
+
+	{{$curFlag := ""}}
+	{{$lastIdx := sub (len .Args) 1}}
+	{{range $i, $arg := .Args}}
+		{{- if $curFlag}}
+			{{- $.Out.Flags.Set $curFlag $arg}}
+			{{- $curFlag = ""}}
+		{{- else if and ($id := $.Flags.Get $arg) (ne $i $lastIdx)}}
+			{{- $curFlag = $id}}
+		{{- else if $id := $.Switches.Get $arg}}
+			{{- $.Out.Switches.Set $id true}}
+		{{- else}}
+			{{- $.Out.Set "Positional" ($.Out.Positional.Append $arg)}}
+		{{- end -}}
+	{{end}}
+{{end}}
+
+{{$query := dict
+	"Flags" (dict
+		"-behalf" "invokerID"
+		"-bh" "invokerID"
+		"-motion" "motionText"
+		"-m" "motionText"
+	)
+	"Switches" (dict
+		"-prec" "supMotion"
+		"-p" "supMotion"
+		"-silent" "nonWritableMotion"
+		"-s" "nonWritableMotion"
+		"-current" "standingMotion"
+		"-c" "standingMotion"
+	)
+	"Args" .CmdArgs
+}}
+
+{{/* PARSE FOR ARGUMENTS */}}
+	{{ template "parseFlags" $query }}
+	{{ if not (or
+		$query.Out.Switches.supMotion
+		$query.Out.Switches.nonWritableMotion
+		$query.Out.Flags.invokerID
+		$query.Out.Flags.motionText
+		$query.Out.Switches.standingMotion
+	)}} 
+			{{ $parseMode = 0 }}
+		{{ else }}
+			{{ $parseMode = 1 }}
+	{{ end }}
+	{{ if eq $parseMode 1 }}
+		{{ if ne (toString $query.Out.Flags.invokerID) "" }}
+			{{- $userInvokee = $query.Out.Flags.invokerID -}}
+		{{ else }} {{ end }}
+	{{ else }} {{ end }}
+	{{- $dbWriteMotion = $query.Out.Switches.supMotion -}}
+	{{- $dbWriteMotion = not $query.Out.Switches.nonWritableMotion -}}
+	{{- $dbLoading = $query.Out.Switches.standingMotion -}}
+{{/* END ARG PARSER */}}
+
+{{/* OUTPUT */}}
+	{{ if $dbLoading }}
+		{{ $retrievedMotions := (dbGet $dbEntryID $dbEntryName).Value }}
+		{{ range $current := $retrievedMotions }}
+			{{- $pastMotionInvokee := $current.motionInvoker }}
+			{{- $pastMotionContent := $current.motionContent }}
+			{{- $pastMotionTimestamp := $current.motionTimestamp }}
+			
+			Set variables correctly!
+
+			{{- $invokee = index (split (getMember $pastMotionInvokee).Nick " ") 0 -}}
+			{{- $avatar = ((getMember $pastMotionInvokee).User.AvatarURL "256") -}}
+			{{- if ( eq "" $pastMotionContent ) }}
+				{{- $title = (joinStr "" $invokee " has a motion.") }}
+			{{- else if gt (len $pastMotionContent) 200 }}
+				{{- $title = (joinStr "" $invokee " has a motion.") }}
+				{{- $description = $pastMotionContent }}
+			{{- else }}
+				{{- $title = (joinStr "" $invokee " moves" $pastMotionContent ".") }}
+			{{- end }}
+
+			Set embed properties correctly!
+
+			{{- $y = sendMessage nil (cembed
+				"title" (joinStr "" $title "") 
+				"description" (joinStr "" $description "") 
+				"color" (toInt $finalColour) 
+				"thumbnail" (sdict "url" $avatar) 
+				"timestamp" $pastMotionTimestamp
+			)}}
+		{{- else }}
+			No motions in database.
+		{{- end }}
+	{{ else }}{{ end }}
+{{/* END OUTPUT */}}
 
 {{/* INGEST */}}
-{{ $motionArg = reReplace `[\s]*\+` $motionArg "" }}
-{{ $description = reFind `\+[\S\s]*` $motionArg }}
-{{ $description = reReplace `\+[\s]*` $description "" }}
-{{ $motionArg = trimSpace $motionArg }}
-{{ if ne "" (reFind `[\S\s]+` $motionArg) }} {{$motionArg = joinStr "" " " $motionArg }} {{ else }} {{ end }}
+	{{ if eq $parseMode 0 }}
+		{{ $motionArg = reReplace `[\s]*\+` $motionArg "" }}
+		{{ $description = reFind `\+[\S\s]*` $motionArg }}
+		{{ $description = reReplace `\+[\s]*` $description "" }}
+		{{ $motionArg = reReplace `[\.\!]$` $motionArg "" }}
+		{{ $motionArg = trimSpace $motionArg }}
+		{{ if ne "" (reFind `[\S\s]+` $motionArg) }} {{$motionArg = joinStr "" " " $motionArg }} {{ else }} {{ end }}
+	{{ else }}
+		{{ $motionArg = reReplace `(?:-behalf(?: <@[\d]+>)? ?)?(?:-bh(?: <@[\d]+>)? ?)?(?:-prec ?)?(?:-p ?)?(?:-silent ?)?(?:-s ?)?(?:-current ?)?(?:-c ?)?(?:-m ?([\w\W]+))?(?:-motion ?([\w\W]+))?` $motionArg "${1}${2}" }}
+		{{ $motionArg = reReplace `[\s]*\+` $motionArg "" }}
+		{{ $description = reFind `\+[\S\s]*` $motionArg }}
+		{{ $description = reReplace `\+[\s]*` $description "" }}
+		{{ $motionArg = reReplace `[\.\!]$` $motionArg "" }}
+		{{ $motionArg = trimSpace $motionArg }}
+		{{ if ne "" (reFind `[\S\s]+` $motionArg) }} {{$motionArg = joinStr "" " " $motionArg }} {{ else }} {{ end }}
+	{{ end }}
+{{/* CLOSE INGEST */}}
+
+{{/*  WRITE TO DATABASE */}}
+	{{ if eq $parseMode 1 }}
+		{{ if $query.Out.Flags.supMotion }}
+			{{ $standing = (dbGet $dbEntryID $dbEntryName).Value }}
+			{{ $standing.Append (sdict 
+				"motionInvoker" (toString $userInvokee)
+				"motionContent" (toString $motionArg)
+				"motionTimestamp" (joinStr "" "<t:" currentTime.Unix ":F>")
+			)}}
+		{{ else }}
+			{{ if $dbWriteMotion }}
+				{{ dbSet $dbEntryID $dbEntryName $standing }}
+				{{ else }}
+			{{ end }}
+		{{ end }}
+	{{ else }}
+		{{ $motionSaved := cslice (sdict 
+			"motionInvoker" (toString $userInvokee)
+			"motionContent" (toString $motionArg)
+			"motionTimestamp" (joinStr "" "<t:" currentTime.Unix ":F>")
+		)}}
+		{{ if $dbWriteMotion }}
+			{{ dbSet $dbEntryID $dbEntryName $motionSaved }}
+			{{ else }}
+		{{ end }}
+	{{ end }}
+{{/* CLOSE DB */}}
 
 {{/* FORMATTING */}}
-{{ if ( eq "" $motionArg ) }}
-	{{ $title = (joinStr "" $invoker " has a Point of Privilege.") }}
-{{else if gt (len $motionArg) 200 }}
-	{{ $title = (joinStr "" $invoker " has a Point of Privilege.") }}
+	{{- $invokee = index (split (getMember $userInvokee).Nick " ") 0 -}}
+	{{- $avatar = ((getMember $userInvokee).User.AvatarURL "256") -}}
+	{{ $title = (joinStr "" $invokee " has a Point of Privilege.") }}
 	{{ $description = $motionArg }}
-{{else}} {{ $title = (joinStr "" $invoker " has a Point of Privilege:" $motionArg) }} {{end}}
+{{/* END FORMATTING */}}
+
+{{ if (ne "" $description) }} {{ $description = (toString $description ) }} {{else}} {{end}}
+{{ if (ne (toString $userInvoker) (toString $userInvokee)) }}
+	{{ $invoker := index (split (getMember $userInvoker).Nick " ") 0 }}
+	{{ $footText := joinStr "" "Command invoked by " $invoker }}
+	{{ $footer = ( sdict
+		"text" $footText
+		"icon_url" (.User.AvatarURL "256")
+	) }}
+{{else}}
+	{{ $footer = ( sdict
+		"text" ""
+	) }}
+{{end}}
 
 {{/* EMBED */}}
 {{ $x := sendMessageRetID nil (cembed
@@ -44,7 +215,8 @@
 	"description" (joinStr "" $description "") 
 	"color" (toInt $finalColour) 
 	"thumbnail" (sdict "url" $avatar) 
-	"timestamp" .Message.Timestamp 
+	"timestamp" .Message.Timestamp
+	"footer" $footer
 ) }}
 
 {{/* REACTIONS & RELEASE */}}

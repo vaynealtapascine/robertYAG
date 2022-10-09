@@ -20,9 +20,9 @@ A set of YAGPDB Custom Commands to facilitate the use of Robert's Rules for asse
 * direct responses
 
 ## TODO
-- Use database to keep track of motions.
-- Add default Points of Orders.
-- Add default Points of Privilege.
-- Add -help flag for commands.
-- Make more flexible with name-stripping (currently strips username to first whole word).
-- Convert into modular format (one command per file)
+- [ ] Use database to keep track of motions.
+- [ ] Add default Points of Orders.
+- [ ] Add default Points of Privilege.
+- [ ] Add -help flag for commands.
+- [ ] Make more flexible with name-stripping (currently strips username to first whole word).
+- [ ] Convert into modular format (one command per file)
