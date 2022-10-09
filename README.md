@@ -25,4 +25,5 @@ A set of YAGPDB Custom Commands to facilitate the use of Robert's Rules for asse
 - [ ] Add default Points of Privilege.
 - [ ] Add -help flag for commands.
 - [ ] Make more flexible with name-stripping (currently strips username to first whole word).
-- [ ] Convert into modular format (one command per file)
+- [x] Convert into modular format (one command per file).
+- [x] Submit points on behalf of another individual.

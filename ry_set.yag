@@ -1,0 +1,111 @@
+{{- /*
+*------------------------------------------------------*
+*													   *
+*	   	 ROBERT'S RULES OF ORDER for YAGP.DB V1.01	   *
+*	   		  written by Vayne, for use with		   *
+*	   				 YAGP.DB TL v1.12				   *
+*													   *
+*	PROVIDED AS IS. Should you require support, feel   *
+*	free to contact me at vaynealtapascine@proton.me   *
+*													   *
+*--- AGENDA -------------------------------------------*
+*	  Trigger:	RegEx
+*	  Pattern:	^[\!\-\.\/\+]+agenda[:]*\b|^[\!\-\.\/\+]+set[:]*\b
+*	  Colour:	8751393
+*------------------------------------------------------*
+*/ -}}
+
+{{ $dbID1 := 24 }}
+{{ $dbKeyName1 := "meetName" }}
+{{ $dbID2 := 25 }}
+{{ $dbKeyName2 := "meetCount" }}
+{{ $dbID3 := 26 }}
+{{ $dbKeyName3 := "meetAgenda" }}
+
+{{define "parseFlags"}}
+	{{.Set "Out" (sdict
+		"Positional" (cslice)
+		"Flags" (dict)
+		"Switches" (dict)
+	)}}
+
+	{{$curFlag := ""}}
+	{{$lastIdx := sub (len .Args) 1}}
+	{{range $i, $arg := .Args}}
+		{{- if $curFlag}}
+			{{- $.Out.Flags.Set $curFlag $arg}}
+			{{- $curFlag = ""}}
+		{{- else if and ($id := $.Flags.Get $arg) (ne $i $lastIdx)}}
+			{{- $curFlag = $id}}
+		{{- else if $id := $.Switches.Get $arg}}
+			{{- $.Out.Switches.Set $id true}}
+		{{- else}}
+			{{- $.Out.Set "Positional" ($.Out.Positional.Append $arg)}}
+		{{- end -}}
+	{{end}}
+{{end}}
+
+{{$query := dict
+	"Flags" (dict
+		"-meet" "meetName"
+		"-num" "meetCount"
+		"-agenda" "meetAgenda"
+		"-m" "meetName"
+		"-n" "meetCount"
+		"-a" "meetAgenda"
+	)
+	"Switches" (dict
+		"-q" "quietFlag"
+		"-inc" "incrementMeet"
+		"-c" "currentMeet"
+	)
+	"Args" .CmdArgs
+}}
+
+{{ template "parseFlags" $query }}
+
+{{ $meetingName := "" }}
+{{if le (len (toString $query.Out.Flags.meetName)) 0 }}
+	{{ $meetingName = (dbGet $dbID1 $dbKeyName1).Value }}
+	{{ if le (len (toString $meetingName)) 0 }}
+		{{ $meetingName = "GA" }}
+	{{ else }} {{ end }}
+{{ else }}
+	{{ $meetingName = $query.Out.Flags.meetName }}
+	{{ dbSet $dbID1 $dbKeyName1 $meetingName }}
+{{ end }}
+
+{{ $meetingCount := "" }}
+{{if le (len (toString $query.Out.Flags.meetCount)) 0 }}
+	{{ $meetingCount = (dbGet $dbID2 $dbKeyName2).Value }}
+	{{ if le (len (toString $meetingCount)) 0 }}
+		{{ $meetingCount = 1 }}
+	{{ else }} {{ end }}
+{{ else }}
+	{{ $meetingCount = $query.Out.Flags.meetCount }}
+	{{ dbSet $dbID2 $dbKeyName2 $meetingCount }}
+{{ end }}
+
+{{ $meetingAgenda := "" }}
+{{if le (len (toString $query.Out.Flags.meetAgenda)) 0 }}
+	{{ $meetingAgenda = (dbGet $dbID3 $dbKeyName3).Value }}
+	{{ if le (len (toString $meetingAgenda)) 0 }}
+		{{ $meetingAgenda = "No agenda listed." }}
+	{{ else }} {{ end }}
+{{ else }}
+	{{ $meetingAgenda = $query.Out.Flags.meetAgenda }}
+	{{ dbSet $dbID3 $dbKeyName3 $meetingAgenda }}
+{{ end }}
+
+{{ $meetingSet := dict 
+	"name" $meetingName
+	"count" $meetingCount
+	"agenda" $meetingAgenda
+}}
+
+{{ if $query.Out.Switches.quietFlag }}
+	{{ return }}
+{{- else -}} {{- joinStr "" "**" $meetingSet.name " #" (toString $meetingSet.count ) "**" -}}
+{{- $meetingSet.agenda -}} {{ end }}
+
+{{deleteTrigger 10}}
